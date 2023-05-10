@@ -1,0 +1,44 @@
+---
+- hosts: webservers
+  become: true
+  become_method: sudo
+  gather_facts: yes
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: true
+    - name: install python3, pip3 venv
+      become: true
+      apt:
+        name:
+          - python3
+          - python3-pip
+          - python3-venv
+        update_cache: yes
+    - name: install flask
+      become: true
+      pip:
+        name: flask
+    - name: copy flask app to remote server
+      copy:
+        src: flask-app.py
+        dest: /home/ubuntu/flask-app/venv/flask-app.py
+        mode: "0755"
+- hosts: all
+  gather_facts: true
+- name: configure HAproxy load balancer
+  hosts: HAproxy
+  become: yes
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+    - name: install HAproxy
+      apt:
+        name: haproxy
+        state: latest
+    - name: configure HAproxy
+      template:
+        src: haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+      become: yes
